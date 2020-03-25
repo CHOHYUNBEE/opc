@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<persistence version="1.0"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd  
+http://java.sun.com/xml/ns/persistence/orm http://java.sun.com/xml/ns/persistence/orm_1_0.xsd"
+	xmlns:orm="http://java.sun.com/xml/ns/persistence/orm"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://java.sun.com/xml/ns/persistence">
+
+
+	<persistence-unit name="jpabook"
+		transaction-type="RESOURCE_LOCAL">
+		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+		<exclude-unlisted-classes>false</exclude-unlisted-classes>
+		<properties>
+			<property name="javax.persistence.jdbc.driver"
+				value="oracle.jdbc.OracleDriver" />
+			<property name="javax.persistence.jdbc.url"
+				value="jdbc:oracle:thin:@192.168.43.232:1521:orcl" />
+			<property name="javax.persistence.jdbc.user" value="system" />
+			<property name="javax.persistence.jdbc.password" value="gusql3413" />
+			
+			<property name="hibernate.show_sql" value="true" /> 
+            <property name="hibernate.format_sql" value="true" />
+            <property name="hibernate.use_sql_comments" value="true" />
+            <property name="hibernate.id.new_generator_mappings" value="true" /> 
+           <property name="hibernate.hbm2ddl.auto" value="create" /> 
+		</properties>
+	</persistence-unit>
+	<persistence-unit name="jpabook_h2">
+
+        <properties>
+
+            <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
+            <property name="javax.persistence.jdbc.user" value="sa"/>
+            <property name="javax.persistence.jdbc.password" value=""/>
+            <property name="javax.persistence.jdbc.url" value="jdbc:h2:tcp://localhost/~/test"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
+<!-- <property name="hibernate.hbm2ddl.auto" value="create" /> -->
+
+            <property name="hibernate.show_sql" value="true" />
+            
+            
+            
+           
+
+        </properties>
+    </persistence-unit>
+</persistence> 
