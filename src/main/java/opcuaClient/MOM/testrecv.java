@@ -1,7 +1,8 @@
-package org.opcfoundation.ua.examples;
+package opcuaClient.MOM;
 
 import java.io.IOException;
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.concurrent.TimeoutException;
 
 import javax.persistence.EntityManager;
@@ -54,8 +55,10 @@ public class testrecv {
 
     }
     
-    public static void logic(EntityManager em,Channel channel) throws IOException, TimeoutException {
+    public static void logic(EntityManager em,Channel channel) throws IOException {
+    	
          channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+         ArrayList<String> tag_array = new ArrayList<String>(); 
          DeliverCallback deliverCallback = (consumerTag, delivery) -> {
              String message = new String(delivery.getBody(), "UTF-8");
 //             System.out.println(" [x] Received '" + message + "'");
@@ -72,14 +75,10 @@ public class testrecv {
              		String DisplayName = tagsObject.get("DisplayName").toString();
              		String NodeId = tagsObject.get("NodeId").toString();
 //             		String TagValue = tagsObject.get("TagValue").toString();
-             		
-             		Tag_Entity Tag_entity = new Tag_Entity();
-             		Tag_entity.setDisplayName(DisplayName);
-             		Tag_entity.setNodeId(NodeId);
-             		Tag_entity.setNodeClass(NodeClass);
-             		
-             		System.out.println(Tag_entity);
-            		em.persist(Tag_entity);
+//             		tag_array = new ArrayList<String>();
+             		tag_array.add(DisplayName);
+             		tag_array.add(NodeClass);
+             		tag_array.add(NodeId);        	
 //            		
 //             		System.out.println("----------------------------Tags----------------------");
 //             		System.out.println("NodeClass : " + NodeClass);
@@ -120,6 +119,17 @@ public class testrecv {
  				// TODO Auto-generated catch block
  				e.printStackTrace();
  			}
+         	Tag_Entity Tag_entity = new Tag_Entity();
+         	for(int i=0;i<tag_array.size();i++) {
+         		System.out.println(tag_array.get(i));
+//         		Tag_entity.setDisplayName(tag_array.get(i));
+//         		Tag_entity.setNodeId(tag_array.get(i));
+//         		Tag_entity.setNodeClass(tag_array.get(i));
+         	}
+     		
+     		
+     		System.out.println(Tag_entity);
+    		em.persist(Tag_entity);
          };
          channel.basicConsume(QUEUE_NAME, true, deliverCallback, consumerTag -> { });
     }

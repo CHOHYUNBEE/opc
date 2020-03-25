@@ -22,7 +22,7 @@
  * ======================================================================
  */
 
-package org.opcfoundation.ua.examples;
+package opcuaClient.MOM;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -335,7 +335,7 @@ public class SampleClient {
 	channel.queueDeclare(QUEUE_NAME, false, false, false, null);
 	for(int testnum=0;testnum<message.length();testnum++) {
 	channel.basicPublish("", QUEUE_NAME, null,message.toString().getBytes());
-	System.out.println(message);
+//	System.out.println(message);
 //	System.out.println(" [x] Set '" +message.toString().getBytes() + "'");
 	Thread.sleep(3000);
 	}
