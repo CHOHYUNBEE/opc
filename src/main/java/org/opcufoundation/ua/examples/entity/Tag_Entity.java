@@ -3,6 +3,7 @@ package org.opcufoundation.ua.examples.entity;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -17,16 +18,16 @@ public class Tag_Entity {
 	@Column (name="DisplayName")
 	private String DisplayName;
 	
-//	@OneToMany(mappedBy="TAG")
-//	private List<TagValue_Entity> tagvalueList = new ArrayList<TagValue_Entity>();
-//	
-//	public List<TagValue_Entity> getTagvalueList() {
-//		return tagvalueList;
-//	}
-//
-//	public void setTagvalueList(List<TagValue_Entity> tagvalueList) {
-//		this.tagvalueList = tagvalueList;
-//	}
+	@OneToMany(mappedBy="TAG",cascade=CascadeType.PERSIST)
+	private List<TagValue_Entity> tagvalueList = new ArrayList<TagValue_Entity>();
+	
+	public List<TagValue_Entity> getTagvalueList() {
+		return tagvalueList;
+	}
+
+	public void setTagvalueList(List<TagValue_Entity> tagvalueList) {
+		this.tagvalueList = tagvalueList;
+	}
 
 	@Column (name="NodeId")
 	private String NodeId;
@@ -39,7 +40,7 @@ public class Tag_Entity {
 	}
 
 	public void setDisplayName(String displayName) {
-		DisplayName = displayName;
+		this.DisplayName = displayName;
 	}
 
 	public String getNodeId() {
@@ -47,7 +48,7 @@ public class Tag_Entity {
 	}
 
 	public void setNodeId(String nodeId) {
-		NodeId = nodeId;
+		this.NodeId = nodeId;
 	}
 
 	public String getNodeClass() {
@@ -55,7 +56,7 @@ public class Tag_Entity {
 	}
 
 	public void setNodeClass(String nodeClass) {
-		NodeClass = nodeClass;
+		this.NodeClass = nodeClass;
 	}
 	
 

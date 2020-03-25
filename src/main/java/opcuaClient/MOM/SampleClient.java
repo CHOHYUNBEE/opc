@@ -128,198 +128,169 @@ public class SampleClient {
   }
 
   public static void main(String[] args) throws Exception {
-//    if (args.length == 0) {
-//      System.out.println("Usage: SampleClient [server uri]");
-//      return;
-//    }
-	  
-    String url = "opc.tcp://192.168.43.175:53530/OPCUA/SimulationServer";
-//    String url = "opc.tcp://DESKTOP-D61DT4N:53530/OPCUA/SimulationServe";
-    System.out.print("SampleClient: Connecting to " + url + " .. ");
+	  RunnableTag test1 = new RunnableTag();
+	  Thread thread = new Thread(test1);
+	  thread.start();
+  }
+  
+  public static class RunnableTag implements Runnable {
 
-    ////////////// CLIENT //////////////
-    CertificateUtils.setKeySize(2048);
-    final KeyPair pair = ExampleKeys.getCert("SampleClient");
-    final Client myClient = Client.createClientApplication(pair);
-    myClient.getApplication().addLocale(Locale.ENGLISH);
-    myClient.getApplication().setApplicationName(new LocalizedText("Java Sample Client", Locale.ENGLISH));
-    myClient.getApplication().setProductUri("urn:JavaSampleClient");
-    final PkiDirectoryCertificateStore myCertStore = new PkiDirectoryCertificateStore("SampleClientPKI/CA");
-    final DefaultCertificateValidator myValidator = new DefaultCertificateValidator(myCertStore);
-    final MyValidationListener myValidationListener = new MyValidationListener();
-    myValidator.setValidationListener(myValidationListener);
-    myClient.getApplication().getOpctcpSettings().setCertificateValidator(myValidator);
-    myClient.getApplication().getHttpsSettings().setCertificateValidator(myValidator);
-    myClient.getApplication().getHttpsSettings().setHttpsSecurityPolicies(HttpsSecurityPolicy.ALL_104);
-    KeyPair myHttpsCertificate = ExampleKeys.getHttpsCert("SampleClient");
-    myClient.getApplication().getHttpsSettings().setKeyPair(myHttpsCertificate);
-    SessionChannel mySession = myClient.createSessionChannel(url);
-    // mySession.activate("username", "123");
-    mySession.activate();
-    //////////////////////////////////////
+	@Override
+	public void run() {
+		String url = "opc.tcp://192.168.43.175:53530/OPCUA/SimulationServer";
+		 while(true) {
+		    	try {
+		    		runTag(url);
+		        	Thread.sleep(3000);
+		        }catch(Exception e) {
+		        	
+		        }
+		    }
+		
+	}
 
-    ///////////// EXECUTE //////////////
-    // Browse Root
-    BrowseDescription browse = new BrowseDescription();
-    browse.setNodeId(Identifiers.RootFolder);
-    browse.setBrowseDirection(BrowseDirection.Forward);
-    browse.setIncludeSubtypes(true);
-    browse.setNodeClassMask(NodeClass.Object, NodeClass.Variable);
-    browse.setResultMask(BrowseResultMask.All);
-    BrowseResponse res3 = mySession.Browse(null, null, null, browse);
-    
-//    System.out.println(res3);
+  }
+  
+  public static void runTag(String url) throws ServiceFaultException, ServiceResultException {
+//////////////CLIENT //////////////
+CertificateUtils.setKeySize(2048);
+final KeyPair pair = ExampleKeys.getCert("SampleClient");
+final Client myClient = Client.createClientApplication(pair);
+myClient.getApplication().addLocale(Locale.ENGLISH);
+myClient.getApplication().setApplicationName(new LocalizedText("Java Sample Client", Locale.ENGLISH));
+myClient.getApplication().setProductUri("urn:JavaSampleClient");
+final PkiDirectoryCertificateStore myCertStore = new PkiDirectoryCertificateStore("SampleClientPKI/CA");
+final DefaultCertificateValidator myValidator = new DefaultCertificateValidator(myCertStore);
+final MyValidationListener myValidationListener = new MyValidationListener();
+myValidator.setValidationListener(myValidationListener);
+myClient.getApplication().getOpctcpSettings().setCertificateValidator(myValidator);
+myClient.getApplication().getHttpsSettings().setCertificateValidator(myValidator);
+myClient.getApplication().getHttpsSettings().setHttpsSecurityPolicies(HttpsSecurityPolicy.ALL_104);
+KeyPair myHttpsCertificate = ExampleKeys.getHttpsCert("SampleClient");
+myClient.getApplication().getHttpsSettings().setKeyPair(myHttpsCertificate);
+SessionChannel mySession = myClient.createSessionChannel(url);
+mySession.activate();
+//////////////////////////////////////
 
-    /////////////////////Tags////////////////////////
-    BrowseDescription browse2 = new BrowseDescription();
-    BrowseResult[] result = res3.getResults();
-    ReferenceDescription[] reference = result[0].getReferences();
-    NodeId nodeid = new NodeId(reference[0].getNodeId().getNamespaceIndex(),reference[0].getNodeId().getValue().hashCode());
-    browse2.setNodeId(nodeid);
-    BrowseResponse tagresult = mySession.Browse(null, null, null, browse2);
+///////////// EXECUTE //////////////
+// Browse Root
+BrowseDescription browse = new BrowseDescription();
+browse.setNodeId(Identifiers.RootFolder);
+browse.setBrowseDirection(BrowseDirection.Forward);
+browse.setIncludeSubtypes(true);
+browse.setNodeClassMask(NodeClass.Object, NodeClass.Variable);
+browse.setResultMask(BrowseResultMask.All);
+BrowseResponse res3 = mySession.Browse(null, null, null, browse);
 
-    //simulation
-    BrowseDescription browse_simulation = new BrowseDescription();
-    BrowseResult[] result_simulation = tagresult.getResults();
-    ReferenceDescription[] reference_simulation = result_simulation[0].getReferences();
-    NodeId simulator_nodeid = new NodeId(reference_simulation[2].getNodeId().getNamespaceIndex(),(String)reference_simulation[2].getNodeId().getValue());
-    browse_simulation.setNodeId(simulator_nodeid);
-    browse_simulation.setBrowseDirection(BrowseDirection.Forward);
-    browse_simulation.setIncludeSubtypes(true);
-    browse_simulation.setNodeClassMask(NodeClass.Object, NodeClass.Variable);
-    browse_simulation.setResultMask(BrowseResultMask.All);
-    BrowseResponse simualtion_result = mySession.Browse(null, null, null, browse_simulation);
-    
-    
-    /////////send tag value//////////
-    BrowseResult[] simulation = simualtion_result.getResults();
-    ReferenceDescription[] simulation_reference = simulation[0].getReferences();
-    
-    
-    
-    /////JSON//////
-    JSONObject jsonObject = new JSONObject();
-    JSONArray TagArray = new JSONArray();
-    JSONArray TagValueArray = new JSONArray();
-    JSONObject Taginfo = new JSONObject();
-    JSONObject Tagvalue = new JSONObject();
-    String jsonInfo  = null; 
-    for(int i=0;i<simulation_reference.length;i++) {    
-    	///////////////////////////////////print node value//////////////////////////////////////////////////
-    	NodeId any_nodeid = new NodeId(simulation_reference[i].getNodeId().getNamespaceIndex(),(String)simulation_reference[i].getNodeId().getValue());
-   	    ReadResponse any_result = mySession.Read(null, 500.0, TimestampsToReturn.Source,
-   	            new ReadValueId(any_nodeid, Attributes.Value, null, null));
-   	    Taginfo = new JSONObject();
-	    Taginfo.put("DisplayName",simulation_reference[i].getDisplayName().getText());
-	    Taginfo.put("IsForward",simulation_reference[i].getIsForward().toString());
-	    Taginfo.put("NodeClass",simulation_reference[i].getNodeClass().toString());
-	    Taginfo.put("NodeId",simulation_reference[i].getNodeId().toString());
+//System.out.println(res3);
 
-    	DataValue[] oj = any_result.getResults();
-    	for(int t=0;t<oj.length;t++) {
-    		Tagvalue = new JSONObject();
-    		TagValueArray = new JSONArray();
-    		if(oj[t].getServerPicoseconds()!=null) {
-    			Tagvalue.put("ServerPicoseconds",oj[t].getServerPicoseconds().toString());
-    		}else {
-    			Tagvalue.put("ServerPicoseconds",oj[t].getServerPicoseconds());
-    		}
-    		if(oj[t].getServerTimestamp()!=null) {
-    			Tagvalue.put("ServerTimestamp",oj[t].getServerTimestamp().toString());
-    		}else {
-    			Tagvalue.put("ServerTimestamp",oj[t].getServerTimestamp());
-    		}
-    		if(oj[t].getSourcePicoseconds()!=null) {
-    			Tagvalue.put("SourcePicoseconds",oj[t].getSourcePicoseconds().toString());
-    		}else {
-    			Tagvalue.put("SourcePicoseconds",oj[t].getSourcePicoseconds());
-    		}
-    		if(oj[t].getSourceTimestamp()!=null) {
-    			Tagvalue.put("SourceTimestamp",oj[t].getSourceTimestamp().toString());
-    		}else {
-    			Tagvalue.put("SourceTimestamp",oj[t].getSourceTimestamp());
-    		}
-    	    Tagvalue.put("StatusCode",oj[t].getStatusCode().toString());
-    	    Tagvalue.put("Value",oj[t].getValue().toString());
-    	    System.out.println("Tagvalue : "+Tagvalue);
-    	    TagValueArray.add(Tagvalue);
-    	    System.out.println("TagValueArray : "+TagValueArray);
-    	    Taginfo.put("TagValue : ",TagValueArray);
-    	    System.out.println("Taginfo : "+Taginfo);
-    	    TagArray.add(Taginfo);
-    	    System.out.println("TagArray : "+TagArray);
-    	    jsonObject.put("TagS", TagArray);
-    	    System.out.println("jsonObject : "+jsonObject);
-    	    jsonInfo = jsonObject.toJSONString();
-    	}
-    	
-   	    /////////////////////////////////////////////////////////////////////////////////////////////////////
-    	System.out.println("---------------------------------------");
-    	if(simulation_reference[i].getNodeClass().getValue()==1) {
-    		NodeId result_nodeid = new NodeId(simulation_reference[i].getNodeId().getNamespaceIndex(),(String)simulation_reference[i].getNodeId().getValue());
-    		ReadResponse tag_result = mySession.Read(null, 500.0, TimestampsToReturn.Source,
-       	            new ReadValueId(result_nodeid, Attributes.Value, null, null));
-    		BrowseDescription new_simulation = new BrowseDescription();
-    		new_simulation.setNodeId(result_nodeid);
-    		new_simulation.setBrowseDirection(BrowseDirection.Forward);
-    		new_simulation.setIncludeSubtypes(true);
-    		new_simulation.setNodeClassMask(NodeClass.Object, NodeClass.Variable);
-    		new_simulation.setResultMask(BrowseResultMask.All);
-    		BrowseResponse new_result = mySession.Browse(null, null, null, new_simulation);
-    		
-    		find_folder(new_result,mySession,tag_result,jsonObject,TagArray,TagValueArray);
+/////////////////////Tags////////////////////////
+BrowseDescription browse2 = new BrowseDescription();
+BrowseResult[] result = res3.getResults();
+ReferenceDescription[] reference = result[0].getReferences();
+NodeId nodeid = new NodeId(reference[0].getNodeId().getNamespaceIndex(),reference[0].getNodeId().getValue().hashCode());
+browse2.setNodeId(nodeid);
+BrowseResponse tagresult = mySession.Browse(null, null, null, browse2);
 
-    	}else {
-    		continue;
-    	}
-    	
-    }
-    send_message(jsonInfo);
-    System.out.println(jsonInfo);
-    
+//simulation
+BrowseDescription browse_simulation = new BrowseDescription();
+BrowseResult[] result_simulation = tagresult.getResults();
+ReferenceDescription[] reference_simulation = result_simulation[0].getReferences();
+NodeId simulator_nodeid = new NodeId(reference_simulation[2].getNodeId().getNamespaceIndex(),(String)reference_simulation[2].getNodeId().getValue());
+browse_simulation.setNodeId(simulator_nodeid);
+browse_simulation.setBrowseDirection(BrowseDirection.Forward);
+browse_simulation.setIncludeSubtypes(true);
+browse_simulation.setNodeClassMask(NodeClass.Object, NodeClass.Variable);
+browse_simulation.setResultMask(BrowseResultMask.All);
+BrowseResponse simualtion_result = mySession.Browse(null, null, null, browse_simulation);
 
-    
-    
-    /////////////////////////////oracle db/////////////////////////////////////////////
-//    String driver = "oracle.jdbc.driver.OracleDriver";
-//	String oracleurl = "jdbc:oracle:thin:@192.168.43.232:1521:orcl";
-//	String user = "system";
-//	String password = "gusql3413";
-//	String query = "Select Url from SERVER";
-//	
-//	Connection con = null;
-//	Statement stmt = null;
-//	ResultSet rs = null;
-//	try {
-//		Class.forName(driver);
-//		con = DriverManager.getConnection(oracleurl, user, password);
-//		
-//		stmt = con.createStatement();
-//		rs = stmt.executeQuery(query);
-//		System.out.println("jdbc driver 로딩 ");
-//		if(rs.next()) {
-//			String Rabbitmq_URL = rs.getString(0);
-//			System.out.println("************************");
-//			System.out.println(Rabbitmq_URL);
-//			System.out.println("************************");
-//		}
-//	} catch (ClassNotFoundException e) {
-//		System.out.println("jdbc driver 로딩 실패");
-//	} catch (SQLException e) {
-//		System.out.println("오라클 연결 실패");
-//	}
-    //////////////////////////////////////////////////////////////////////////////////
 
-    ///////////// SHUTDOWN /////////////
-    try {
-    	Thread.sleep(3000);
-    }catch(Exception e) {
-    	
-    }
-    mySession.close();
-    mySession.closeAsync();
-    //////////////////////////////////////
+/////////send tag value//////////
+BrowseResult[] simulation = simualtion_result.getResults();
+ReferenceDescription[] simulation_reference = simulation[0].getReferences();
 
+
+
+/////JSON//////
+JSONObject jsonObject = new JSONObject();
+JSONArray TagArray = new JSONArray();
+JSONArray TagValueArray = new JSONArray();
+JSONObject Taginfo = new JSONObject();
+JSONObject Tagvalue = new JSONObject();
+String jsonInfo  = null; 
+for(int i=0;i<simulation_reference.length;i++) {    
+///////////////////////////////////print node value//////////////////////////////////////////////////
+NodeId any_nodeid = new NodeId(simulation_reference[i].getNodeId().getNamespaceIndex(),(String)simulation_reference[i].getNodeId().getValue());
+  ReadResponse any_result = mySession.Read(null, 500.0, TimestampsToReturn.Source,
+          new ReadValueId(any_nodeid, Attributes.Value, null, null));
+  Taginfo = new JSONObject();
+Taginfo.put("DisplayName",simulation_reference[i].getDisplayName().getText());
+Taginfo.put("IsForward",simulation_reference[i].getIsForward().toString());
+Taginfo.put("NodeClass",simulation_reference[i].getNodeClass().toString());
+Taginfo.put("NodeId",simulation_reference[i].getNodeId().toString());
+
+DataValue[] oj = any_result.getResults();
+for(int t=0;t<oj.length;t++) {
+	Tagvalue = new JSONObject();
+	TagValueArray = new JSONArray();
+	if(oj[t].getServerPicoseconds()!=null) {
+		Tagvalue.put("ServerPicoseconds",oj[t].getServerPicoseconds().toString());
+	}else {
+		Tagvalue.put("ServerPicoseconds",oj[t].getServerPicoseconds());
+	}
+	if(oj[t].getServerTimestamp()!=null) {
+		Tagvalue.put("ServerTimestamp",oj[t].getServerTimestamp().toString());
+	}else {
+		Tagvalue.put("ServerTimestamp",oj[t].getServerTimestamp());
+	}
+	if(oj[t].getSourcePicoseconds()!=null) {
+		Tagvalue.put("SourcePicoseconds",oj[t].getSourcePicoseconds().toString());
+	}else {
+		Tagvalue.put("SourcePicoseconds",oj[t].getSourcePicoseconds());
+	}
+	if(oj[t].getSourceTimestamp()!=null) {
+		Tagvalue.put("SourceTimestamp",oj[t].getSourceTimestamp().toString());
+	}else {
+		Tagvalue.put("SourceTimestamp",oj[t].getSourceTimestamp());
+	}
+   Tagvalue.put("StatusCode",oj[t].getStatusCode().toString());
+   Tagvalue.put("Value",oj[t].getValue().toString());
+//   System.out.println("Tagvalue : "+Tagvalue);
+   TagValueArray.add(Tagvalue);
+//   System.out.println("TagValueArray : "+TagValueArray);
+   Taginfo.put("TagValue",TagValueArray);
+//   System.out.println("Taginfo : "+Taginfo);
+   TagArray.add(Taginfo);
+//   System.out.println("TagArray : "+TagArray);
+   jsonObject.put("TagS", TagArray);
+//   System.out.println("jsonObject : "+jsonObject);
+   jsonInfo = jsonObject.toJSONString();
+}
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+//System.out.println("---------------------------------------");
+if(simulation_reference[i].getNodeClass().getValue()==1) {
+	NodeId result_nodeid = new NodeId(simulation_reference[i].getNodeId().getNamespaceIndex(),(String)simulation_reference[i].getNodeId().getValue());
+	ReadResponse tag_result = mySession.Read(null, 500.0, TimestampsToReturn.Source,
+	            new ReadValueId(result_nodeid, Attributes.Value, null, null));
+	BrowseDescription new_simulation = new BrowseDescription();
+	new_simulation.setNodeId(result_nodeid);
+	new_simulation.setBrowseDirection(BrowseDirection.Forward);
+	new_simulation.setIncludeSubtypes(true);
+	new_simulation.setNodeClassMask(NodeClass.Object, NodeClass.Variable);
+	new_simulation.setResultMask(BrowseResultMask.All);
+	BrowseResponse new_result = mySession.Browse(null, null, null, new_simulation);
+	
+	find_folder(new_result,mySession,tag_result,jsonObject,TagArray,TagValueArray);
+
+}else {
+	continue;
+}
+
+}
+send_message(jsonInfo);
+mySession.close();
+mySession.closeAsync();
   }
   
   public static void send_message(String message) {
@@ -335,8 +306,8 @@ public class SampleClient {
 	channel.queueDeclare(QUEUE_NAME, false, false, false, null);
 	for(int testnum=0;testnum<message.length();testnum++) {
 	channel.basicPublish("", QUEUE_NAME, null,message.toString().getBytes());
-//	System.out.println(message);
-//	System.out.println(" [x] Set '" +message.toString().getBytes() + "'");
+	System.out.println(message);
+
 	Thread.sleep(3000);
 	}
 	} catch (TimeoutException e) {
@@ -352,7 +323,6 @@ public class SampleClient {
   public static void find_folder(BrowseResponse new_result,SessionChannel mySession,ReadResponse any_result,JSONObject jsonObject,JSONArray TagArray ,JSONArray TagValueArray) throws ServiceFaultException, ServiceResultException {
 	    BrowseResult[] result_simulation = new_result.getResults();
 	    ReferenceDescription[] reference_simulation = result_simulation[0].getReferences();
-	    System.out.println("*******************catch***********************");
 	    JSONObject Taginfo = new JSONObject();
 	    JSONObject Tagvalue = new JSONObject();
 	    for(int i=0;i<reference_simulation.length;i++) {
@@ -395,7 +365,7 @@ public class SampleClient {
 	    	  
 	      	    
 	    	    String jsonInfo = jsonObject.toJSONString();
-		    	send_message(jsonInfo);
+		    	
 		   
 	    	}
 
@@ -416,29 +386,11 @@ public class SampleClient {
 	    		continue;
 	    	}
 	    }
+	    
   }
+
 
 }
 
 
-
-//// Read Namespace Array
-//ReadResponse res5 = mySession.Read(null, null, TimestampsToReturn.Neither,
-//  new ReadValueId(Identifiers.Server_NamespaceArray, Attributes.Value, null, null));
-//String[] namespaceArray = (String[]) res5.getResults()[0].getValue().getValue();
-//System.out.println(Arrays.toString(namespaceArray));
-
-// Read a variable (Works with NanoServer example!)
-//BrowseResult[] Tag_result = simualtion_result.getResults();
-//ReferenceDescription[] Tag_Reference = Tag_result[0].getReferences();
-//for(int i=0;i<Tag_Reference.length;i++) {
-//	  NodeId any_nodeid = new NodeId(Tag_Reference[i].getNodeId().getNamespaceIndex(),(String)Tag_Reference[i].getNodeId().getValue());
-//	    ReadResponse any_result = mySession.Read(null, 500.0, TimestampsToReturn.Source,
-//	            new ReadValueId(any_nodeid, Attributes.Value, null, null));
-////	    System.out.println(any_result);
-//}
-
-//ReadResponse res4 = mySession.Read(null, 500.0, TimestampsToReturn.Source,
-//  new ReadValueId(new NodeId(3, "Random"), Attributes.Value, null, null));
-//System.out.println(res4);
 
