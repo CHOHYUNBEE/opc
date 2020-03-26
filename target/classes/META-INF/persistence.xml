@@ -23,7 +23,8 @@ http://java.sun.com/xml/ns/persistence/orm http://java.sun.com/xml/ns/persistenc
             <property name="hibernate.format_sql" value="true" />
             <property name="hibernate.use_sql_comments" value="true" />
             <property name="hibernate.id.new_generator_mappings" value="true" /> 
-           <property name="hibernate.hbm2ddl.auto" value="create" /> 
+            <property name="hibernate.hbm2ddl.auto" value="update" /> 
+         
 		</properties>
 	</persistence-unit>
 	<persistence-unit name="jpabook_h2">
